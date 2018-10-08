@@ -498,7 +498,7 @@ def main():
 	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
 		help="Loads column names from command's stdout")
 	parser.add_argument("-P", "--parallelism", dest="num_parallel", type=int,
-		help="Parallelizes using <NUM_PARALLEL> threads", default="1")
+		help="Parallelizes using <NUM_PARALLEL> threads. If <NUM_PARALLEL> is less than 0 the degree of parallelism will be chosen", default="1")
 
 	args = parser.parse_args()
 
