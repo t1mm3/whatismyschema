@@ -2,6 +2,7 @@
 
 from decimal import *
 from datetime import datetime
+import itertools
 
 class MinMax(object):
 	__slots__ = "dmin", "dmax"
@@ -18,6 +19,10 @@ class MinMax(object):
 
 	def exists(self):
 		return self.dmax is not None and self.dmin is not None
+
+	def merge(self, other):
+		self.push(other.dmin)
+		self.push(other.dmax)
 
 def check_int(s):
 	if s[0] in ('-', '+'):
@@ -181,9 +186,38 @@ class Column(object):
 	def check(self, table):
 		pass
 
+	def merge(self, other):
+		assert(other.id == self.id)
+
+		if self.int_minmax is not None and other.int_minmax is not None:
+			self.int_minmax.merge(other.int_minmax)
+		else:
+			self.int_minmax = None
+
+		if self.decdigits_minmax is not None and other.decdigits_minmax is not None:
+			self.decdigits_minmax.merge(other.decdigits_minmax)
+		else:
+			self.decdigits_minmax = None
+
+		if self.decprecision_minmax is not None and other.decprecision_minmax is not None:
+			self.decprecision_minmax.merge(other.decprecision_minmax)
+		else:
+			self.decprecision_minmax = None
+
+		if self.len_minmax is not None and other.len_minmax is not None:
+			self.len_minmax.merge(other.len_minmax)
+		else:
+			self.len_minmax = None
+
+		if other.guess_date is None:
+			self.guess_date = None
+
+		if other.guess_datetime is None:
+			self.guess_datetime
+
 
 class Table:
-	__slots__ = "seperator", "columns", "line_number", "fixed_schema", "parent_null_value"
+	__slots__ = "seperator", "columns", "line_number", "parent_null_value"
 	def __init__(self, seperator):
 		self.seperator = "|"
 		if seperator is not None:
@@ -191,7 +225,7 @@ class Table:
 
 		self.columns = []
 		self.line_number = 0
-		self.fixed_schema = False
+
 		self.parent_null_value = ""
 
 	def push_line(self, line):
@@ -200,10 +234,7 @@ class Table:
 		num_attrs = len(attrs)
 		num_cols = len(self.columns)
 
-		if num_attrs != num_cols:
-			if self.fixed_schema:
-				raise Exception("Number of columns does not match fixed schema")
-		
+		if num_attrs != num_cols:		
 			diff = num_attrs - num_cols
 			if num_attrs > num_cols:
 				for r in range(0, diff):
@@ -242,27 +273,158 @@ class Table:
 
 			col.check(self)
 
+	def merge(self, other):
+		self.check()
+		other.check()
+
+		num_self = len(self.columns)
+		num_other = len(other.columns)
+
+		zipped = list(itertools.zip_longest(self.columns, other.columns))
+
+		new_cols = []
+
+		for (scol, ocol) in zipped:
+			if scol is not None:
+				if ocol is not None:
+					scol.merge(ocol)
+				new_cols.append(scol)
+			else:
+				new_cols.append(ocol)
+
+		self.columns = new_cols
+
+import threading
+class FileDriver:
+	def __init__(self, file, begin):
+		self.mutex = threading.Lock()
+		self.file = file
+		self.chunk_size = 16*1024
+		self.begin = begin
+		self.count = 0
+		self.done = False
+
+	def _skip_begin(self):
+		while self.count < self.begin:
+			l = self.file.readline()
+			if not l:
+				self.done = True
+				return False
+			self.count = self.count + 1
+		return True
+
+	def nextTuple(self):
+		if self.done:
+			return None
+
+		success = self._skip_begin()
+		if not success:
+			return None
+
+		l = self.file.readline()
+		if not l:
+			self.done = True
+			return None
+
+		self.count = self.count + 1
+		return l
+
+	def nextMorsel(self):
+		with self.mutex:
+			r = []
+
+			if self.done:
+				return None
+
+			success = self._skip_begin()
+			if not success:
+				return None
+
+			for i in range(0, self.chunk_size):
+				l = self.file.readline()
+				if not l:
+					self.done = True
+					break
+				self.count = self.count + 1
+
+				r.append(l)
+
+			return r
+
 
 import sys
 import argparse
 import subprocess
+from multiprocessing import Pool
 
-def process_file(table, f, begin):
-	nr = 0
-	for line in f:
-		if nr < begin:
-			continue
-		
-		table.push_line(line)
-		nr = nr + 1
+drivers = []
+
+def driver_loop(table, driver_index, parallel):
+	global drivers
+	driver = drivers[driver_index]
+
+	if parallel:
+		while True:
+			lines = driver.nextMorsel()
+			if lines is None:
+				break
+
+			for line in lines:
+				table.push_line(line)
+	else:
+		while True:
+			line = driver.nextTuple()
+			if line is None:
+				break
+
+			table.push_line(line)
+
+	return table
+
+def schema_main_parallel(table, args):
+	global drivers
+
+	parallelism = args.num_parallel
+	with Pool(processes=parallelism) as pool:
+		# spawn jobs
+		jobs = []
+
+		for i in range(0, parallelism):
+			idx = 0
+			for file in drivers:
+				new_table = Table(args.seperator)
+				jobs.append(pool.apply_async(driver_loop, (new_table, idx, True)))
+				idx = idx + 1
+
+		# wait for all and merge
+		for task in jobs:
+			table.merge(task.get())
+
+	return table
+
 
 def schema_main(table, args):
-	if len(args.files) == 0:
-		process_file(table, sys.stdin, args.begin)
-	else:
-		for file in args.files:
-			with open(file) as f:
-				process_file(table, f, args.begin)
+	global drivers
+
+	files = []
+	try:
+		if len(args.files) == 0:
+			drivers = [FileDriver(sys.stdin, args.begin)]
+		else:
+			files = {filename: open(filename, 'w') for filename in args.files}
+			drivers = list(map(lambda x: FileDriver(files, args.begin), files))
+
+		if args.num_parallel > 1:
+			return schema_main_parallel(table, args)
+
+		idx = 0
+		for driver in drivers:
+			driver_loop(table, idx, False)
+			idx = idx + 1
+
+	finally:
+		for f in files:
+			f.close()
 
 	return table
 
@@ -292,9 +454,8 @@ if __name__ == '__main__':
 		help="Loads column names from file")
 	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
 		help="Loads column names from command's stdout")
-	parser.add_argument('--validate-schema', dest='strictschema', action='store_true',
-		help="Validates schema when column information or names is given")
-	parser.set_defaults(strictschema=False)
+	parser.add_argument("-P", "--parallelism", dest="num_parallel", type=int,
+		help="Parallelizes using <NUM_PARALLEL> threads", default="1")
 
 	args = parser.parse_args()
 
@@ -305,16 +466,14 @@ if __name__ == '__main__':
 
 
 	if args.colnamefile:
-		table.fixed_schema = args.strictschema
 		with open(args.colnamefile) as f:
 			load_column_info(table, f)
 
 	if args.colnamecmd:
-		table.fixed_schema = args.strictschema
 		cmd = subprocess.Popen(args.colnamecmd, shell=True, stdout=subprocess.PIPE)
 		load_column_info(table, cmd.communicate()[0].decode('ascii', 'ignore'))
 
-	
+
 	schema_main(table, args)
 	table.check()
 
