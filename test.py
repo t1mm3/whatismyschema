@@ -1,7 +1,7 @@
 #!/bin/env python
 
 import unittest
-from schema import *
+from whatismyschema import *
 
 class ComplexTest(unittest.TestCase):
 	def fix_type(self, t):
