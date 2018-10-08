@@ -164,7 +164,7 @@ class Column:
 
 		assert(len(tpe_str) > 0)
 
-		print("{n} {t} {a}".format(
+		return("{n} {t} {a}".format(
 			n=self.name, t=tpe_str[0],
 			a="NOT NULL" if self.num_nulls == 0 else ""))
 
@@ -251,9 +251,28 @@ if __name__ == '__main__':
 		help="Column seperator", default="|")
 	parser.add_argument("-B", "--begin", type=int, dest="begin",
 		help="Skips first <n> rows", default="0")
+	parser.add_argument("--sql", dest="sql", type=str,
+		help="Creates SQL schema using given table name")
 
 	args = parser.parse_args()
 
 	table = schema_main(args)
-	for col in table.columns:
-		col.print_types(table)
+
+	if args.sql:
+		print("CREATE TABLE {} (".format(args.sql))
+
+		col_counter = 0
+		num_cols = len(table.columns)
+
+		for col in table.columns:
+			col_counter = col_counter + 1
+			last_col = col_counter == num_cols
+
+			t=col.print_types(table)
+			print("{t}{post}".format(
+				t=t,
+				post="" if last_col else ","))
+		print("}")
+	else:
+		for col in table.columns:
+			print(col.print_types(table))
