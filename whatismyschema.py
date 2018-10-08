@@ -218,10 +218,8 @@ class Column(object):
 
 class Table:
 	__slots__ = "seperator", "columns", "line_number", "parent_null_value"
-	def __init__(self, seperator):
+	def __init__(self):
 		self.seperator = "|"
-		if seperator is not None:
-			self.seperator = seperator
 
 		self.columns = []
 		self.line_number = 0
@@ -394,7 +392,7 @@ def schema_main_parallel(master_table, args):
 	tables = []
 	for i in range(0, parallelism):
 		for file in drivers:
-			tables.append(Table(args.seperator))
+			tables.append(Table())
 
 	# Set settings
 	apply_settings([master_table] + tables, args)
@@ -459,9 +457,6 @@ def load_column_info(table, f):
 
 
 def apply_settings(tables, args):
-	if args.null:
-		table.parent_null_value = args.null
-
 	colfile = []
 	if args.colnamefile:
 		with open(args.colnamefile) as f:
@@ -473,6 +468,10 @@ def apply_settings(tables, args):
 		colcmd = load_column_info(table, cmd.communicate()[0].decode('ascii', 'ignore'))
 
 	for table in tables:
+		table.seperator = args.seperator
+		if args.null:
+			table.parent_null_value = args.null
+
 		for line in colfile:
 			table.columns.append(Column(table, line))
 		for line in colcmd:
@@ -503,7 +502,7 @@ def main():
 
 	args = parser.parse_args()
 
-	table = Table(args.seperator)
+	table = Table()
 
 	schema_main(table, args)
 	table.check()
