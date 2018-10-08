@@ -83,6 +83,7 @@ class Column:
 
 		self.null_value = ""
 		self.num_nulls = 0
+		self.num_values = 0
 
 		self.int_minmax = MinMax()
 		self.decdigits_minmax = MinMax()
@@ -99,6 +100,8 @@ class Column:
 			])
 
 	def push_attribute(self, attr, table):
+		self.num_values = self.num_values + 1
+
 		if attr == self.null_value:
 			self.num_nulls = self.num_nulls + 1
 			return
@@ -170,6 +173,9 @@ class Column:
 			n=self.name, t=tpe_str[0],
 			a="NOT NULL" if self.num_nulls == 0 else ""))
 
+	def check(self, table):
+		pass
+
 
 class Table:
 	def __init__(self, seperator):
@@ -216,13 +222,23 @@ class Table:
 	def push(self, x):
 		self.push_line(x)
 
-	def print_schema(self):
+	def check(self):
+		num_values = None
+		empty_tail = False
+
 		for col in self.columns:
-			col.print_types(self)
+			if num_values is None:
+				num_values = col.num_values
+			else:
+				assert(num_values >= col.num_values)
+				num_values = col.num_values
+
+			col.check(self)
 
 
 import sys
 import argparse
+import subprocess
 
 def process_file(table, f, begin):
 	nr = 0
@@ -245,6 +261,14 @@ def schema_main(args):
 
 	return table
 
+def load_column_info(table, f):
+	for line in f:
+		line = line.strip()
+		if len(line) == 0:
+			continue
+
+		table.columns.append(Column(table, line))
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
 		description="""Figures out SQL data types from schema.""")
@@ -259,6 +283,8 @@ if __name__ == '__main__':
 		help="Creates SQL schema using given table name")
 	parser.add_argument("--colnamefile", dest="colnamefile", type=str,
 		help="Loads column names from file")
+	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
+		help="Loads column names from command's stdout")
 
 	args = parser.parse_args()
 
@@ -267,21 +293,24 @@ if __name__ == '__main__':
 	if args.colnamefile:
 		table.fixed_schema = True
 		with open(args.colnamefile) as f:
-			for line in f:
-				line = line.strip()
-				if len(line) == 0:
-					continue
+			load_column_info(table, f)
 
-				table.columns.append(Column(table, line))
+	if args.colnamecmd:
+		cmd = subprocess.Popen(args.colnamecmd, shell=True, stdout=subprocess.PIPE)
+		load_column_info(table, cmd.communicate()[0])
 
+	table.check()
+
+	print_cols = filter(lambda col: col.num_values > 0, table.columns)
+	num_cols = len(print_cols)
 
 	if args.sql:
 		print("CREATE TABLE {} (".format(args.sql))
 
 		col_counter = 0
-		num_cols = len(table.columns)
+		
 
-		for col in table.columns:
+		for col in print_cols:
 			col_counter = col_counter + 1
 			last_col = col_counter == num_cols
 
@@ -291,5 +320,5 @@ if __name__ == '__main__':
 				post="" if last_col else ","))
 		print("}")
 	else:
-		for col in table.columns:
+		for col in print_cols:
 			print(col.print_types(table))

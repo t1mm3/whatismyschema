@@ -47,6 +47,7 @@ class ComplexTest(unittest.TestCase):
 			["date", "datetime"])
 
 		self.check_none_null(table.columns)
+		table.check()
 
 	def testSep1(self):
 		table = Table("seperator")
@@ -56,6 +57,7 @@ class ComplexTest(unittest.TestCase):
 			["varchar(6)", "varchar(5)"])
 
 		self.check_none_null(table.columns)
+		table.check()
 
 	def testDec1(self):
 		table = Table("|")
@@ -68,6 +70,7 @@ class ComplexTest(unittest.TestCase):
 			["decimal(5,3)"])
 
 		self.check_none_null(table.columns)
+		table.check()
 
 	def test1(self):
 		table = Table("|")
@@ -78,6 +81,7 @@ class ComplexTest(unittest.TestCase):
 			["varchar(4)", "varchar(7)", "decimal(4,2)", "varchar(4)", "bigint"])
 
 		self.check_none_null(table.columns)
+		table.check()
 
 	def testColMismatch1(self):
 		table = Table(",")
@@ -89,6 +93,7 @@ class ComplexTest(unittest.TestCase):
 			["tinyint", "tinyint"])
 
 		self.check_null(table.columns, [False, True])
+		table.check()
 
 if __name__ == '__main__':
 	unittest.main()
