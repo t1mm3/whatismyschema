@@ -296,6 +296,7 @@ class Table:
 
 import threading
 class FileDriver:
+	__slots__ = "mutex", "file", "chunk_size", "begin", "count", "done"
 	def __init__(self, file, begin):
 		self.mutex = threading.Lock()
 		self.file = file
@@ -351,7 +352,7 @@ class FileDriver:
 
 			return r
 
-
+import os
 import sys
 import argparse
 import subprocess
@@ -409,10 +410,11 @@ def schema_main(table, args):
 	files = []
 	try:
 		if len(args.files) == 0:
-			drivers = [FileDriver(sys.stdin, args.begin)]
+			drivers = [FileDriver(os.fdopen(os.dup(sys.stdin.fileno())), args.begin)]
 		else:
-			files = {filename: open(filename, 'w') for filename in args.files}
-			drivers = list(map(lambda x: FileDriver(files, args.begin), files))
+			files = list(map(lambda fn: open(fn, 'r'), args.files))
+			drivers = list(map(lambda x: FileDriver(x, args.begin), files))
+
 
 		if args.num_parallel > 1:
 			return schema_main_parallel(table, args)
@@ -425,6 +427,7 @@ def schema_main(table, args):
 	finally:
 		for f in files:
 			f.close()
+		drivers = []
 
 	return table
 
