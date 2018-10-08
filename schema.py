@@ -73,8 +73,9 @@ class Column:
 		]
 
 	def __init__(self, table, name):
+		self.id = len(table.columns)
 		if name is None:
-			self.name = "col{}".format(len(table.columns))
+			self.name = "col{}".format(self.id)
 		else:
 			self.name = name
 
@@ -179,21 +180,35 @@ class Table:
 
 	def push_line(self, line):
 		attrs = line.split(self.seperator)
-		self.line_number = self.line_number + 1
 
 		num_attrs = len(attrs)
 		num_cols = len(self.columns)
 
-		if num_attrs != num_cols and self.fixed_schema:
-			raise Exception("Number of columns does not match fixed schema")
+		if num_attrs != num_cols:
+			if self.fixed_schema:
+				raise Exception("Number of columns does not match fixed schema")
 		
-		if num_attrs > num_cols:
 			diff = num_attrs - num_cols
-			for r in range(0, diff):
-				self.columns.append(Column(self, None))
+			if num_attrs > num_cols:
+				for r in range(0, diff):
+					c = Column(self, None)
+
+					# Add NULLs because these columns are new
+					# Hence before that they are considered missing values
+					c.num_nulls = self.line_number
+
+					self.columns.append(c)
+			else:
+				assert(num_attrs < num_cols)
+				for r in range(0, diff):
+					# Append safe NULL values
+					c = self.columns[r+num_attrs]
+					attr.append(c.null_value)
 
 		for (attr, col) in zip(attrs, self.columns):
 			col.push_attribute(attr, self)
+
+		self.line_number = self.line_number + 1
 
 	def push(self, x):
 		self.push_line(x)
@@ -206,13 +221,25 @@ class Table:
 import sys
 import argparse
 
-def process_file(f):
+def process_file(table, f):
 	for line in f:
 		table.push_line(line)
 
+def schema_main(args):
+	table = Table(args.seperator)
+
+	if len(args.files) == 0:
+		process_file(table, sys.stdin)
+	else:
+		for file in args.files:
+			f = open(file)
+			process_file(table, f)
+
+	return table
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
-		description='Figures out SQL data types from schema')
+		description="""Figures out SQL data types from schema.""")
 
 	parser.add_argument('files', metavar='FILES', nargs='*',
 		help='CSV files to process. Stdin if none given')
@@ -221,13 +248,6 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
-	table = Table(args.seperator)
-
-	if len(args.files) == 0:
-		process_file(sys.stdin)
-	else:
-		for file in args.files:
-			f = open(file)
-			process_file(f)
-
-	table.print_schema()
+	table = schema_main(args)
+	for col in table.columns:
+		col.print_types(table)
