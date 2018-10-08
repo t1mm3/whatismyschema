@@ -204,11 +204,30 @@ class Table:
 
 
 import sys
+import argparse
+
+def process_file(f):
+	for line in f:
+		table.push_line(line)
 
 if __name__ == '__main__':
-	table = Table("|")
+	parser = argparse.ArgumentParser(
+		description='Figures out SQL data types from schema')
 
-	for line in sys.stdin:
-		table.push_line(line)
+	parser.add_argument('files', metavar='FILES', nargs='*',
+		help='CSV files to process. Stdin if none given')
+	parser.add_argument("-F", "--sep", dest="seperator",
+		help="Column seperator", default="|")
+
+	args = parser.parse_args()
+
+	table = Table(args.seperator)
+
+	if len(args.files) == 0:
+		process_file(sys.stdin)
+	else:
+		for file in args.files:
+			f = open(file)
+			process_file(f)
 
 	table.print_schema()
