@@ -252,13 +252,13 @@ if __name__ == '__main__':
 	parser.add_argument('files', metavar='FILES', nargs='*',
 		help='CSV files to process. Stdin if none given')
 	parser.add_argument("-F", "--sep", dest="seperator",
-		help="Column seperator", default="|")
+		help="Use <SEPERATOR> as delimiter between columns", default="|")
 	parser.add_argument("-B", "--begin", type=int, dest="begin",
-		help="Skips first <n> rows", default="0")
+		help="Skips first <BEGIN> rows", default="0")
 	parser.add_argument("--sql", dest="sql", type=str,
 		help="Creates SQL schema using given table name")
 	parser.add_argument("--colnamefile", dest="colnamefile", type=str,
-		help="Laods column names from file")
+		help="Loads column names from file")
 
 	args = parser.parse_args()
 
