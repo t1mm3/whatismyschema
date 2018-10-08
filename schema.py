@@ -238,8 +238,8 @@ def schema_main(args):
 		process_file(table, sys.stdin, args.begin)
 	else:
 		for file in args.files:
-			f = open(file)
-			process_file(table, f, args.begin)
+			with open(file) as f:
+				process_file(table, f, args.begin)
 
 	return table
 
@@ -255,10 +255,23 @@ if __name__ == '__main__':
 		help="Skips first <n> rows", default="0")
 	parser.add_argument("--sql", dest="sql", type=str,
 		help="Creates SQL schema using given table name")
+	parser.add_argument("--colnamefile", dest="colnamefile", type=str,
+		help="Laods column names from file")
 
 	args = parser.parse_args()
 
 	table = schema_main(args)
+
+	if args.colnamefile:
+		table.fixed_schema = True
+		with open(args.colnamefile) as f:
+			for line in f:
+				line = line.strip()
+				if len(line) == 0:
+					continue
+
+				table.columns.append(Column(table, line))
+
 
 	if args.sql:
 		print("CREATE TABLE {} (".format(args.sql))
