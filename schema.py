@@ -249,9 +249,7 @@ def process_file(table, f, begin):
 		table.push_line(line)
 		nr = nr + 1
 
-def schema_main(args):
-	table = Table(args.seperator)
-
+def schema_main(table, args):
 	if len(args.files) == 0:
 		process_file(table, sys.stdin, args.begin)
 	else:
@@ -285,30 +283,35 @@ if __name__ == '__main__':
 		help="Loads column names from file")
 	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
 		help="Loads column names from command's stdout")
+	parser.add_argument('--validate-schema', dest='strictschema', action='store_true',
+		help="Validates schema when column information or names is given")
+	parser.set_defaults(strictschema=False)
 
 	args = parser.parse_args()
 
-	table = schema_main(args)
+	table = Table(args.seperator)
 
 	if args.colnamefile:
-		table.fixed_schema = True
+		table.fixed_schema = args.strictschema
 		with open(args.colnamefile) as f:
 			load_column_info(table, f)
 
 	if args.colnamecmd:
+		table.fixed_schema = args.strictschema
 		cmd = subprocess.Popen(args.colnamecmd, shell=True, stdout=subprocess.PIPE)
-		load_column_info(table, cmd.communicate()[0])
+		load_column_info(table, cmd.communicate()[0].decode('ascii', 'ignore'))
 
+	
+	schema_main(table, args)
 	table.check()
 
-	print_cols = filter(lambda col: col.num_values > 0, table.columns)
+	print_cols = list(filter(lambda col: col.num_values > 0, table.columns))
 	num_cols = len(print_cols)
 
 	if args.sql:
 		print("CREATE TABLE {} (".format(args.sql))
 
 		col_counter = 0
-		
 
 		for col in print_cols:
 			col_counter = col_counter + 1
