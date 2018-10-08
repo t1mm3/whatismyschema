@@ -356,7 +356,7 @@ import os
 import sys
 import argparse
 import subprocess
-from multiprocessing import Pool
+import multiprocessing
 
 drivers = []
 
@@ -386,7 +386,11 @@ def schema_main_parallel(table, args):
 	global drivers
 
 	parallelism = args.num_parallel
-	with Pool(processes=parallelism) as pool:
+
+	if parallelism < 0:
+		parallelism = multiprocessing.cpu_count()
+
+	with multiprocessing.Pool(processes=parallelism) as pool:
 		# spawn jobs
 		jobs = []
 
@@ -416,7 +420,7 @@ def schema_main(table, args):
 			drivers = list(map(lambda x: FileDriver(x, args.begin), files))
 
 
-		if args.num_parallel > 1:
+		if args.num_parallel != 1:
 			return schema_main_parallel(table, args)
 
 		idx = 0
