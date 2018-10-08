@@ -481,7 +481,8 @@ def apply_settings(tables, args):
 
 def main():
 	parser = argparse.ArgumentParser(
-		description="""Figures out SQL data types from schema.""")
+		description="""Determine SQL schema from CSV data."""
+	)
 
 	parser.add_argument('files', metavar='FILES', nargs='*',
 		help='CSV files to process. Stdin if none given')
