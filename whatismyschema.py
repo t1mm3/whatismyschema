@@ -382,13 +382,22 @@ def driver_loop(table, driver_index, parallel):
 
 	return table
 
-def schema_main_parallel(table, args):
+def schema_main_parallel(master_table, args):
 	global drivers
 
 	parallelism = args.num_parallel
 
 	if parallelism < 0:
 		parallelism = multiprocessing.cpu_count()
+
+	# Allocate tables
+	tables = []
+	for i in range(0, parallelism):
+		for file in drivers:
+			tables.append(Table(args.seperator))
+
+	# Set settings
+	apply_settings([master_table] + tables, args)
 
 	with multiprocessing.Pool(processes=parallelism) as pool:
 		# spawn jobs
@@ -397,15 +406,15 @@ def schema_main_parallel(table, args):
 		for i in range(0, parallelism):
 			idx = 0
 			for file in drivers:
-				new_table = Table(args.seperator)
+				new_table = tables.pop()
 				jobs.append(pool.apply_async(driver_loop, (new_table, idx, True)))
 				idx = idx + 1
 
 		# wait for all and merge
 		for task in jobs:
-			table.merge(task.get())
+			master_table.merge(task.get())
 
-	return table
+	return master_table
 
 
 def schema_main(table, args):
@@ -423,6 +432,8 @@ def schema_main(table, args):
 		if args.num_parallel != 1:
 			return schema_main_parallel(table, args)
 
+		apply_settings([table], args)
+
 		idx = 0
 		for driver in drivers:
 			driver_loop(table, idx, False)
@@ -436,14 +447,39 @@ def schema_main(table, args):
 	return table
 
 def load_column_info(table, f):
+	r = []
 	for line in f:
 		line = line.strip()
 		if len(line) == 0:
 			continue
 
-		table.columns.append(Column(table, line))
+		r.append(line)
 
-if __name__ == '__main__':
+	return r
+
+
+def apply_settings(tables, args):
+	if args.null:
+		table.parent_null_value = args.null
+
+	colfile = []
+	if args.colnamefile:
+		with open(args.colnamefile) as f:
+			colfile = load_column_info(table, f)
+
+	colcmd = []
+	if args.colnamecmd:
+		cmd = subprocess.Popen(args.colnamecmd, shell=True, stdout=subprocess.PIPE)
+		colcmd = load_column_info(table, cmd.communicate()[0].decode('ascii', 'ignore'))
+
+	for table in tables:
+		for line in colfile:
+			table.columns.append(Column(table, line))
+		for line in colcmd:
+			table.columns.append(Column(table, line))
+
+
+def main():
 	parser = argparse.ArgumentParser(
 		description="""Figures out SQL data types from schema.""")
 
@@ -468,19 +504,6 @@ if __name__ == '__main__':
 
 	table = Table(args.seperator)
 
-	if args.null:
-		table.parent_null_value = args.null
-
-
-	if args.colnamefile:
-		with open(args.colnamefile) as f:
-			load_column_info(table, f)
-
-	if args.colnamecmd:
-		cmd = subprocess.Popen(args.colnamecmd, shell=True, stdout=subprocess.PIPE)
-		load_column_info(table, cmd.communicate()[0].decode('ascii', 'ignore'))
-
-
 	schema_main(table, args)
 	table.check()
 
@@ -504,3 +527,6 @@ if __name__ == '__main__':
 	else:
 		for col in print_cols:
 			print(col.print_types(table))
+
+if __name__ == '__main__':
+	main()
