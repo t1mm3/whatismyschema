@@ -57,6 +57,18 @@ class ComplexTest(unittest.TestCase):
 
 		self.check_none_null(table.columns)
 
+	def testDec1(self):
+		table = Table("|")
+		table.push("42")
+		table.push("42.44")
+		table.push("42.424")
+		table.push("4.424")
+
+		self.check_types(table.columns,
+			["decimal(5,3)"])
+
+		self.check_none_null(table.columns)
+
 	def test1(self):
 		table = Table("|")
 		table.push("Str1|Str2|42|42|13")

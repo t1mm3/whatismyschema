@@ -4,8 +4,9 @@ from decimal import *
 from datetime import datetime
 
 class MinMax:
-	dmin = None
-	dmax = None
+	def __init__(self):
+		self.dmin = None
+		self.dmax = None
 
 	def push(self, x):
 		if self.dmax is None or x > self.dmax:
@@ -221,19 +222,22 @@ class Table:
 import sys
 import argparse
 
-def process_file(table, f):
+def process_file(table, f, begin):
+	nr = 0
 	for line in f:
-		table.push_line(line)
+		if nr >= begin:
+			table.push_line(line)
+		nr = nr + 1
 
 def schema_main(args):
 	table = Table(args.seperator)
 
 	if len(args.files) == 0:
-		process_file(table, sys.stdin)
+		process_file(table, sys.stdin, args.begin)
 	else:
 		for file in args.files:
 			f = open(file)
-			process_file(table, f)
+			process_file(table, f, args.begin)
 
 	return table
 
@@ -245,6 +249,8 @@ if __name__ == '__main__':
 		help='CSV files to process. Stdin if none given')
 	parser.add_argument("-F", "--sep", dest="seperator",
 		help="Column seperator", default="|")
+	parser.add_argument("-B", "--begin", type=int, dest="begin",
+		help="Skips first <n> rows", default="0")
 
 	args = parser.parse_args()
 
