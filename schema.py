@@ -124,10 +124,10 @@ class Column:
 			if not self.guess_date.valid:
 				self.guess_date = None
 
-		if self.guess_date is not None:
-			self.guess_date.test(attr)
-			if not self.guess_date.valid:
-				self.guess_date = None
+		if self.guess_datetime is not None:
+			self.guess_datetime.test(attr)
+			if not self.guess_datetime.valid:
+				self.guess_datetime = None
 
 
 	def determine_type(self):
@@ -148,6 +148,9 @@ class Column:
 
 		if self.guess_date is not None:
 			r.append("date")
+
+		if self.guess_datetime is not None:
+			r.append("datetime")
 
 		if self.len_minmax is not None:
 			r.append("varchar({})".format(self.len_minmax.dmax))
@@ -190,6 +193,9 @@ class Table:
 		for (attr, col) in zip(attrs, self.columns):
 			col.push_attribute(attr, self)
 
+	def push(self, x):
+		self.push_line(x)
+
 	def print_schema(self):
 		for col in self.columns:
 			col.print_types(self)
@@ -197,9 +203,10 @@ class Table:
 
 import sys
 
-table = Table()
+if __name__ == '__main__':
+	table = Table()
 
-for line in sys.stdin:
-	table.push_line(line)
+	for line in sys.stdin:
+		table.push_line(line)
 
-table.print_schema()
+	table.print_schema()
