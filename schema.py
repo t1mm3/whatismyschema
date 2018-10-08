@@ -43,10 +43,11 @@ class FormatTryAndError:
 					return
 		else:
 			# Figure out format and eliminate invalid formats
+			new_formats = []
 			for fmt in self.formats:
 				val = self.match_format(attr, fmt)
 				if val is not None:
-					new_formats.add(fmt)
+					new_formats.append(fmt)
 
 			self.formats = new_formats
 			if len(new_formats) < 1:
@@ -93,7 +94,8 @@ class Column:
 			])
 
 		self.guess_datetime= DateTimeFormatTryAndError([
-				"%Y-%m-%d %H:%M:%S.%f"
+				"%Y-%m-%d %H:%M:%S.%f",
+				"%Y-%m-%d %H:%M:%S"
 			])
 
 	def push_attribute(self, attr, table):
