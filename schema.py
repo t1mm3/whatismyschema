@@ -81,7 +81,7 @@ class Column:
 		else:
 			self.name = name
 
-		self.null_value = ""
+		self.null_value = table.parent_null_value
 		self.num_nulls = 0
 		self.num_values = 0
 
@@ -186,6 +186,7 @@ class Table:
 		self.columns = []
 		self.line_number = 0
 		self.fixed_schema = False
+		self.parent_null_value = ""
 
 	def push_line(self, line):
 		attrs = line.split(self.seperator)
@@ -279,6 +280,8 @@ if __name__ == '__main__':
 		help="Skips first <BEGIN> rows", default="0")
 	parser.add_argument("--sql", dest="sql", type=str,
 		help="Creates SQL schema using given table name")
+	parser.add_argument("--null", dest="null", type=str,
+		help="Interprets <NULL> as NULLs", default="")
 	parser.add_argument("--colnamefile", dest="colnamefile", type=str,
 		help="Loads column names from file")
 	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
@@ -290,6 +293,10 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	table = Table(args.seperator)
+
+	if args.null:
+		table.parent_null_value = args.null
+
 
 	if args.colnamefile:
 		table.fixed_schema = args.strictschema
