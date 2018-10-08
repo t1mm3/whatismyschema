@@ -169,9 +169,9 @@ class Column:
 
 		assert(len(tpe_str) > 0)
 
-		return("{n} {t} {a}".format(
+		return("{n} {t}{a}".format(
 			n=self.name, t=tpe_str[0],
-			a="NOT NULL" if self.num_nulls == 0 else ""))
+			a=" NOT NULL" if self.num_nulls == 0 else ""))
 
 	def check(self, table):
 		pass
