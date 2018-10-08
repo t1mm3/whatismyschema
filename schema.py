@@ -168,12 +168,14 @@ class Column:
 
 
 class Table:
-	seperator = "|"
-	columns = []
+	def __init__(self, seperator):
+		self.seperator = "|"
+		if seperator is not None:
+			self.seperator = seperator
 
-	line_number = 0
-
-	fixed_schema = False
+		self.columns = []
+		self.line_number = 0
+		self.fixed_schema = False
 
 	def push_line(self, line):
 		attrs = line.split(self.seperator)
@@ -204,7 +206,7 @@ class Table:
 import sys
 
 if __name__ == '__main__':
-	table = Table()
+	table = Table("|")
 
 	for line in sys.stdin:
 		table.push_line(line)
