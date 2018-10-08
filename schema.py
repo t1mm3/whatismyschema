@@ -227,8 +227,10 @@ import argparse
 def process_file(table, f, begin):
 	nr = 0
 	for line in f:
-		if nr >= begin:
-			table.push_line(line)
+		if nr < begin:
+			continue
+		
+		table.push_line(line)
 		nr = nr + 1
 
 def schema_main(args):
