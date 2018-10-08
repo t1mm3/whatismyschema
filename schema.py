@@ -3,7 +3,9 @@
 from decimal import *
 from datetime import datetime
 
-class MinMax:
+class MinMax(object):
+	__slots__ = "dmin", "dmax"
+
 	def __init__(self):
 		self.dmin = None
 		self.dmax = None
@@ -22,7 +24,8 @@ def check_int(s):
 		return s[1:].isdigit()
 	return s.isdigit()
 
-class FormatTryAndError:
+class FormatTryAndError(object):
+	__slots__ = "formats", "valid"
 	def __init__(self, formats):
 		self.formats = formats
 		self.valid = True
@@ -66,13 +69,15 @@ class DateTimeFormatTryAndError(FormatTryAndError):
 			return None
 
 	
-class Column:
+class Column(object):
 	int_ranges = [
 			(0, 255, "tinyint"),
 			(-32768, 32767, "smallint"),
 			(-2147483648, 2147483647, "int"),
 			(-9223372036854775808, 9223372036854775807, "bigint")
 		]
+
+	__slots__ = "id", "name", "null_value", "num_nulls", "num_values", "int_minmax", "decdigits_minmax", "decprecision_minmax", "len_minmax", "guess_date", "guess_datetime"
 
 	def __init__(self, table, name):
 		self.id = len(table.columns)
@@ -178,6 +183,7 @@ class Column:
 
 
 class Table:
+	__slots__ = "seperator", "columns", "line_number", "fixed_schema", "parent_null_value"
 	def __init__(self, seperator):
 		self.seperator = "|"
 		if seperator is not None:
