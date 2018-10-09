@@ -3,6 +3,11 @@
 from decimal import *
 from datetime import datetime
 import itertools
+try:
+    from itertools import zip_longest as zip_longest
+except:
+    from itertools import izip_longest as zip_longest
+
 
 class MinMax(object):
 	__slots__ = "dmin", "dmax"
@@ -278,7 +283,7 @@ class Table:
 		num_self = len(self.columns)
 		num_other = len(other.columns)
 
-		zipped = list(itertools.zip_longest(self.columns, other.columns))
+		zipped = list(zip_longest(self.columns, other.columns))
 
 		new_cols = []
 
