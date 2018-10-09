@@ -510,10 +510,10 @@ def main():
 		help="Loads column names from file")
 	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
 		help="Loads column names from command's stdout")
-	parser.add_argument("-P", "--parallelism", dest="num_parallel", type=int,
-		help="Parallelizes using <NUM_PARALLEL> threads. If <NUM_PARALLEL> is less than 0 the degree of parallelism will be chosen", default="1")
+	parser.add_argument("-P", "--parallelism", "--parallel", dest="num_parallel", type=int,
+		help="Parallelizes using <NUM_PARALLEL> threads. If <NUM_PARALLEL> is less than 0 the degree of parallelism will be chosen.", default="1")
 	parser.add_argument("--parallel-chunk-size", dest="chunk_size", type=int,
-		help="Sets chunk size for parallel reading", default="16384")
+		help="Sets chunk size for parallel reading. Default is 16k lines.", default="16384")
 
 	args = parser.parse_args()
 
