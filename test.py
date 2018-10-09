@@ -9,7 +9,7 @@
 import unittest
 from whatismyschema import *
 
-class ComplexTest(unittest.TestCase):
+class WhatIsMySchemaTestCase(unittest.TestCase):
 	def fix_type(self, t):
 		return t.lower().replace(" ", "")
 
@@ -45,8 +45,12 @@ class ComplexTest(unittest.TestCase):
 	def check_none_null(self, cols):
 		self.check_all_null_val(cols, False)
 
+
+
+class TableTests(WhatIsMySchemaTestCase):
 	def testDates1(self):
-		table = Table(",")
+		table = Table()
+		table.seperator = ","
 		table.push("2013-08-29,2013-08-05 15:23:13.716532")
 
 		self.check_types(table.columns,
@@ -56,7 +60,8 @@ class ComplexTest(unittest.TestCase):
 		table.check()
 
 	def testSep1(self):
-		table = Table("seperator")
+		table = Table()
+		table.seperator = "seperator"
 		table.push("Hallo|seperator|Welt")
 
 		self.check_types(table.columns,
@@ -66,7 +71,8 @@ class ComplexTest(unittest.TestCase):
 		table.check()
 
 	def testDec1(self):
-		table = Table("|")
+		table = Table()
+		table.seperator = "|"
 		table.push("42")
 		table.push("42.44")
 		table.push("42.424")
@@ -79,7 +85,8 @@ class ComplexTest(unittest.TestCase):
 		table.check()
 
 	def test1(self):
-		table = Table("|")
+		table = Table()
+		table.seperator = "|"
 		table.push("Str1|Str2|42|42|13")
 		table.push("Ha|Str3333|42.42|Test|34543534543543")
 
@@ -90,7 +97,8 @@ class ComplexTest(unittest.TestCase):
 		table.check()
 
 	def testColMismatch1(self):
-		table = Table(",")
+		table = Table()
+		table.seperator = ","
 		table.push("1")
 		table.push("1,2")
 		table.push("1")
