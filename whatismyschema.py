@@ -306,11 +306,12 @@ class Table:
 import threading
 class FileDriver:
 	__slots__ = "mutex", "file", "chunk_size", "begin", "count", "done"
-	def __init__(self, file, begin):
+	def __init__(self, file, args):
 		self.mutex = threading.Lock()
 		self.file = file
-		self.chunk_size = 16*1024
-		self.begin = begin
+		assert(args.chunk_size >= 1)
+		self.chunk_size = args.chunk_size
+		self.begin = args.begin
 		self.count = 0
 		self.done = False
 
@@ -433,10 +434,10 @@ def schema_main(table, args):
 	files = []
 	try:
 		if len(args.files) == 0:
-			drivers = [FileDriver(os.fdopen(os.dup(sys.stdin.fileno())), args.begin)]
+			drivers = [FileDriver(os.fdopen(os.dup(sys.stdin.fileno())), args)]
 		else:
 			files = list(map(lambda fn: open(fn, 'r'), args.files))
-			drivers = list(map(lambda x: FileDriver(x, args.begin), files))
+			drivers = list(map(lambda x: FileDriver(x, args), files))
 
 
 		if args.num_parallel != 1:
@@ -511,6 +512,8 @@ def main():
 		help="Loads column names from command's stdout")
 	parser.add_argument("-P", "--parallelism", dest="num_parallel", type=int,
 		help="Parallelizes using <NUM_PARALLEL> threads. If <NUM_PARALLEL> is less than 0 the degree of parallelism will be chosen", default="1")
+	parser.add_argument("--parallel-chunk-size", dest="chunk_size", type=int,
+		help="Sets chunk size for parallel reading", default="16384")
 
 	args = parser.parse_args()
 

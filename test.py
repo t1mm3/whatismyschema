@@ -11,7 +11,7 @@ from whatismyschema import *
 
 class WhatIsMySchemaTestCase(unittest.TestCase):
 	def fix_type(self, t):
-		return t.lower().replace(" ", "")
+		return t.lower().replace(" ", "").replace("\n", "")
 
 	def check_type(self, col, expect):
 		types = col.determine_type()
@@ -108,6 +108,43 @@ class TableTests(WhatIsMySchemaTestCase):
 
 		self.check_null(table.columns, [False, True])
 		table.check()
+
+
+class CliTests(WhatIsMySchemaTestCase):
+	def exec(self, cmd, file):
+		path = os.path.dirname(__file__)
+		p = subprocess.Popen("python {path}/whatismyschema.py{sep}{cmd}{sep}{path}/{file}".format(
+			path=path, cmd=cmd, file=file,
+			sep=" " if len(cmd) > 0 else ""), shell=True,
+		stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		out, err = p.communicate()
+		if p.returncode:
+			raise Exception(err)
+		else:
+			# Print stdout from cmd call
+			if err is None:
+				err = ""
+			if out is None:
+				out = ""
+			
+			self.assertEqual(0, len(err.decode('utf8').strip()))
+			return self.fix_type(out.decode('utf8').strip())
+
+	def testParallel1(self):
+		for num_process in [1, 2, 4, 8]:
+			for begin in [0, 1]:
+				flags = "--parallel-chunk-size 1 --parallelism={parallel} --begin {begin}".format(
+					parallel=num_process, begin=begin)
+				out = self.exec(flags, "test1.txt")
+				if begin == 0:
+					expect = self.fix_type("col0varchar(5)notnullcol1varchar(2)notnullcol2varchar(4)notnull")
+					self.assertEqual(out, expect)
+				elif begin == 1:
+					expect = self.fix_type("col0decimal(4,2)notnullcol1tinyintnotnullcol2smallintnotnull")
+					self.assertEqual(out, expect)
+				else:
+					assert(False)
+
 
 if __name__ == '__main__':
 	unittest.main()
