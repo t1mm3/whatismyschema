@@ -132,18 +132,19 @@ class CliTests(WhatIsMySchemaTestCase):
 
 	def testParallel1(self):
 		for num_process in [1, 2, 4, 8]:
-			for begin in [0, 1]:
-				flags = "--parallel-chunk-size 1 --parallelism={parallel} --begin {begin}".format(
-					parallel=num_process, begin=begin)
-				out = self.exec(flags, "test1.txt")
-				if begin == 0:
-					expect = self.fix_type("col0varchar(5)notnullcol1varchar(2)notnullcol2varchar(4)notnull")
-					self.assertEqual(out, expect)
-				elif begin == 1:
-					expect = self.fix_type("col0decimal(4,2)notnullcol1tinyintnotnullcol2smallintnotnull")
-					self.assertEqual(out, expect)
-				else:
-					assert(False)
+			for chunk_size in [1, 10, 100]:
+				for begin in [0, 1]:
+					flags = "--parallel-chunk-size {chunk_size} --parallelism={parallel} --begin {begin}".format(
+						chunk_size=chunk_size, parallel=num_process, begin=begin)
+					out = self.exec(flags, "test1.txt")
+					if begin == 0:
+						expect = self.fix_type("col0varchar(5)notnullcol1varchar(2)notnullcol2varchar(4)notnull")
+						self.assertEqual(out, expect)
+					elif begin == 1:
+						expect = self.fix_type("col0decimal(4,2)notnullcol1tinyintnotnullcol2smallintnotnull")
+						self.assertEqual(out, expect)
+					else:
+						assert(False)
 
 
 if __name__ == '__main__':
