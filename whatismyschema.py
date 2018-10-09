@@ -501,7 +501,7 @@ def main():
 		help="Use <SEPERATOR> as delimiter between columns", default="|")
 	parser.add_argument("-B", "--begin", type=int, dest="begin",
 		help="Skips first <BEGIN> rows", default="0")
-	parser.add_argument("--sql", dest="sql", type=str,
+	parser.add_argument("--create-table", dest="sql", type=str,
 		help="Creates SQL schema using given table name")
 	parser.add_argument("--null", dest="null", type=str,
 		help="Interprets <NULL> as NULLs", default="")
