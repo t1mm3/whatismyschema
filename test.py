@@ -1,4 +1,10 @@
 #!/bin/env python
+#
+# WhatIsMySchema
+#
+# Copyright (c) 2018 Tim Gubner
+#
+#
 
 import unittest
 from whatismyschema import *

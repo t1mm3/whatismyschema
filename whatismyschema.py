@@ -1,4 +1,10 @@
 #!/bin/env python
+#
+# WhatIsMySchema
+#
+# Copyright (c) 2018 Tim Gubner
+#
+#
 
 from decimal import *
 from datetime import datetime
