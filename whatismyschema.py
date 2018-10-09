@@ -355,6 +355,7 @@ import sys
 import argparse
 import subprocess
 import multiprocessing
+from contextlib import closing
 
 drivers = []
 
@@ -397,7 +398,7 @@ def schema_main_parallel(master_table, args):
 	# Set settings
 	apply_settings([master_table] + tables, args)
 
-	with multiprocessing.Pool(processes=parallelism) as pool:
+	with closing(multiprocessing.Pool(processes=parallelism)) as pool:
 		# spawn jobs
 		jobs = []
 
