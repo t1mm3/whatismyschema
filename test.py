@@ -134,7 +134,7 @@ class CliTests(WhatIsMySchemaTestCase):
 		for num_process in [1, 2, 4, 8]:
 			for chunk_size in [1, 10, 100]:
 				for begin in [0, 1]:
-					flags = "--parallel-chunk-size {chunk_size} --parallelism={parallel} --begin {begin}".format(
+					flags = "--parallel-chunk-size {chunk_size} --parallelism {parallel} --begin {begin}".format(
 						chunk_size=chunk_size, parallel=num_process, begin=begin)
 					out = self.exec(flags, "test1.txt")
 					if begin == 0:
