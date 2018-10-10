@@ -13,7 +13,7 @@ try:
     from itertools import zip_longest as zip_longest
 except:
     from itertools import izip_longest as zip_longest
-
+from multiprocessing.pool import ThreadPool
 
 class MinMax(object):
 	__slots__ = "dmin", "dmax"
@@ -294,11 +294,10 @@ class Table:
 
 		self.columns = new_cols
 
-import threading
 class FileDriver:
 	__slots__ = "mutex", "file", "chunk_size", "begin", "count", "done"
 	def __init__(self, file, args):
-		self.mutex = threading.Lock()
+		self.mutex = multiprocessing.Lock()
 		self.file = file
 		assert(args.chunk_size >= 1)
 		self.chunk_size = args.chunk_size
@@ -360,12 +359,7 @@ import subprocess
 import multiprocessing
 from contextlib import closing
 
-drivers = []
-
-def driver_loop(table, driver_index, parallel):
-	global drivers
-	driver = drivers[driver_index]
-
+def driver_loop(table, driver, parallel):
 	if parallel:
 		while True:
 			lines = driver.nextMorsel()
@@ -384,9 +378,7 @@ def driver_loop(table, driver_index, parallel):
 
 	return table
 
-def schema_main_parallel(master_table, args):
-	global drivers
-
+def schema_main_parallel(master_table, args, drivers):
 	parallelism = args.num_parallel
 
 	if parallelism < 0:
@@ -401,16 +393,14 @@ def schema_main_parallel(master_table, args):
 	# Set settings
 	apply_settings([master_table] + tables, args)
 
-	with closing(multiprocessing.Pool(processes=parallelism)) as pool:
+	with closing(ThreadPool(processes=parallelism)) as pool:
 		# spawn jobs
 		jobs = []
 
 		for i in range(0, parallelism):
-			idx = 0
-			for file in drivers:
+			for driver in drivers:
 				new_table = tables.pop()
-				jobs.append(pool.apply_async(driver_loop, (new_table, idx, True)))
-				idx = idx + 1
+				jobs.append(pool.apply_async(driver_loop, (new_table, driver, True)))
 
 		# wait for all and merge
 		for task in jobs:
@@ -420,9 +410,9 @@ def schema_main_parallel(master_table, args):
 
 
 def schema_main(table, args):
-	global drivers
-
+	drivers = []
 	files = []
+
 	try:
 		if len(args.files) == 0:
 			drivers = [FileDriver(os.fdopen(os.dup(sys.stdin.fileno())), args)]
@@ -432,14 +422,12 @@ def schema_main(table, args):
 
 
 		if args.num_parallel != 1:
-			return schema_main_parallel(table, args)
+			return schema_main_parallel(table, args, drivers)
 
 		apply_settings([table], args)
 
-		idx = 0
 		for driver in drivers:
-			driver_loop(table, idx, False)
-			idx = idx + 1
+			driver_loop(table, driver, False)
 
 	finally:
 		for f in files:
@@ -483,7 +471,7 @@ def apply_settings(tables, args):
 
 class TableOutput(object):
 
-	__slots__ = "widths", "num_cols"
+	__slots__ = "widths", "num_cols", "hfill"
 
 	def __init__(self, widths):
 		for w in widths:
@@ -528,7 +516,6 @@ class TtyOutput(TableOutput):
 		self.hfill = list(
 			map(lambda width: self.hline * width,
 				self.widths))
-		self.first = True
 
 	def put_first(self):
 		return "{}{}{}".format(self.tljoint, self._put(self.hfill, self.tcjoint), self.trjoint)
