@@ -601,7 +601,7 @@ class TerminalOutput(object):
 		out = TtyOutput([w_name, w_type, w_null])
 
 		print(out.put_first())
-		print(out.put(["Name", "Type", "NOT NULL"]))
+		print(out.put(["Name", "Type", "Null"]))
 
 		for (col, tpe_str) in print_cols:
 			print(out.put_linesep())
