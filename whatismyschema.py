@@ -544,11 +544,12 @@ class TtyOutput(TableOutput):
 
 
 class TerminalOutput(object):
-	__slots__ = "tty_table", "create_table"
+	__slots__ = "tty_table", "create_table", "no_header"
 
 	def __init__(self, args):
 		self.tty_table = sys.stdout.isatty()
 		self.create_table = args.sql
+		self.no_header = args.no_table_header
 
 	def _unpackTypeString(self, col):
 		tpe_str = col.determine_type()
@@ -600,11 +601,19 @@ class TerminalOutput(object):
 
 		out = TtyOutput([w_name, w_type, w_null])
 
-		print(out.put_first())
-		print(out.put(["Name", "Type", "Null"]))
+		first = True
+
+		if not self.no_header:
+			print(out.put_first())
+			print(out.put(["Name", "Type", "Null"]))
+			first = False
 
 		for (col, tpe_str) in print_cols:
-			print(out.put_linesep())
+			if first:
+				first = False
+			else:
+				print(out.put_linesep())
+
 			print(out.put([col.name, tpe_str,  "NOT NULL" if col.num_nulls == 0 else ""]))
 
 		print(out.put_last())
@@ -628,6 +637,9 @@ def main():
 		help="Loads column names from file")
 	parser.add_argument("--colnamecmd", dest="colnamecmd", type=str,
 		help="Loads column names from command's stdout")
+	parser.add_argument("--no-header", dest="no_table_header",
+		help="Print no table header", action='store_true')
+	parser.set_defaults(no_table_header=False)
 	parser.add_argument("-P", "--parallelism", "--parallel", dest="num_parallel", type=int,
 		help="Parallelizes using <NUM_PARALLEL> threads. If <NUM_PARALLEL> is less than 0 the degree of parallelism will be chosen.", default="1")
 	parser.add_argument("--parallel-chunk-size", dest="chunk_size", type=int,
