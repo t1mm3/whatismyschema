@@ -185,15 +185,6 @@ class Column(object):
 
 		return r
 
-	def print_types(self, table):
-		tpe_str = self.determine_type()
-
-		assert(len(tpe_str) > 0)
-
-		return("{n} {t}{a}".format(
-			n=self.name, t=tpe_str[0],
-			a=" NOT NULL" if self.num_nulls == 0 else ""))
-
 	def check(self, table):
 		pass
 
@@ -490,6 +481,133 @@ def apply_settings(tables, args):
 		for line in colcmd:
 			table.columns.append(Column(table, line))
 
+class TableOutput(object):
+
+	__slots__ = "widths", "num_cols"
+
+	def __init__(self, widths):
+		for w in widths:
+			assert(w > 0)
+
+		self.widths = widths
+		self.num_cols = len(widths)
+
+	def _put(self, values, sep):
+		r = ""
+
+		num = len(values)
+		assert(self.num_cols == num)
+		idx = 0
+
+		for (val, width) in list(zip(values, self.widths)):
+			idx = idx + 1
+
+			s = sep if idx < num else ""
+			r = "{0}{1:<{width}}{2}".format(r, val, s, width=width)
+
+		return r
+
+class TtyOutput(TableOutput):
+	vline = "│"
+	hline = "─"
+
+	ljoint = "├"
+	cjoint = "┼"
+	rjoint = "┤"
+
+	tljoint = "┌"
+	trjoint = "┐"
+	tcjoint = "┬"
+
+	bljoint = "└"
+	brjoint = "┘"
+	bcjoint = "┴"
+
+	def __init__(self, widths):
+		TableOutput.__init__(self, widths)
+		self.hfill = list(
+			map(lambda width: self.hline * width,
+				self.widths))
+		self.first = True
+
+	def put_first(self):
+		return "{}{}{}".format(self.tljoint, self._put(self.hfill, self.tcjoint), self.trjoint)
+
+	def put_linesep(self):
+		return "{}{}{}".format(self.ljoint, self._put(self.hfill, self.cjoint), self.rjoint)
+
+	def put_last(self):
+		return "{}{}{}".format(self.bljoint, self._put(self.hfill, self.bcjoint), self.brjoint)
+
+	def put(self, values):
+		return "{}{}{}".format(self.vline, self._put(values, self.vline), self.vline)
+
+
+class TerminalOutput(object):
+	__slots__ = "tty_table", "create_table"
+
+	def __init__(self, args):
+		self.tty_table = sys.stdout.isatty()
+		self.create_table = args.sql
+
+	def _unpackTypeString(self, col):
+		tpe_str = col.determine_type()
+		assert(len(tpe_str) > 0)
+		return tpe_str[0]
+
+	def render(self, table):
+		print_cols = list(
+			map(lambda col: (col, self._unpackTypeString(col)),
+				filter(lambda col: col.num_values > 0,
+					table.columns)))
+		num_cols = len(print_cols)
+
+		if self.create_table:
+			print("CREATE TABLE {} (".format(self.create_table))
+
+			col_counter = 0
+
+			for (col, tpe_str) in print_cols:
+				col_counter = col_counter + 1
+				last_col = col_counter == num_cols
+
+
+				t="{n} {t}{a}".format(
+					n=col.name, t=tpe_str,
+					a=" " if col.num_nulls == 0 else "")
+
+				print("{t}{post}".format(
+					t=t,
+					post="" if last_col else ","))
+			print("}")
+
+			return
+
+		if not self.tty_table:
+			for (col, tpe_str) in print_cols:
+				print("{n} {t}{a}".format(
+					n=col.name, t=tpe_str,
+					a=" NOT NULL" if col.num_nulls == 0 else ""))
+			return
+
+		w_name = 0
+		w_type = 0
+		w_null = len("NOT NULL")
+
+		for (col, tpe_str) in print_cols:
+			w_name = max(w_name, len(col.name))
+			w_type = max(w_type, len(tpe_str))
+
+		out = TtyOutput([w_name, w_type, w_null])
+
+		print(out.put_first())
+		print(out.put(["Name", "Type", "NOT NULL"]))
+
+		for (col, tpe_str) in print_cols:
+			print(out.put_linesep())
+			print(out.put([col.name, tpe_str,  "NOT NULL" if col.num_nulls == 0 else ""]))
+
+		print(out.put_last())
 
 def main():
 	parser = argparse.ArgumentParser(
@@ -522,26 +640,10 @@ def main():
 	schema_main(table, args)
 	table.check()
 
-	print_cols = list(filter(lambda col: col.num_values > 0, table.columns))
-	num_cols = len(print_cols)
+	output = TerminalOutput(args)
 
-	if args.sql:
-		print("CREATE TABLE {} (".format(args.sql))
+	output.render(table)
 
-		col_counter = 0
-
-		for col in print_cols:
-			col_counter = col_counter + 1
-			last_col = col_counter == num_cols
-
-			t=col.print_types(table)
-			print("{t}{post}".format(
-				t=t,
-				post="" if last_col else ","))
-		print("}")
-	else:
-		for col in print_cols:
-			print(col.print_types(table))
 
 if __name__ == '__main__':
 	main()
