@@ -173,7 +173,7 @@ class TableTests(WhatIsMySchemaTestCase):
 
 class CliTests(WhatIsMySchemaTestCase):
 	def exec(self, cmd, file):
-		path = os.path.dirname(__file__)
+		path = os.path.dirname(os.path.abspath(__file__))
 		p = subprocess.Popen("python {path}/whatismyschema.py{sep}{cmd}{sep}{path}/{file}".format(
 			path=path, cmd=cmd, file=file,
 			sep=" " if len(cmd) > 0 else ""), shell=True,
@@ -192,7 +192,6 @@ class CliTests(WhatIsMySchemaTestCase):
 			return self.fix_type(out.decode('utf8').strip())
 
 	def testParallel1(self):
-		return
 		for num_process in [1, 2, 4, 8]:
 			for chunk_size in [1, 10, 100]:
 				for begin in [0, 1]:

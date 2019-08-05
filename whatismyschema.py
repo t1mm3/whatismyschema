@@ -249,15 +249,15 @@ class Column(object):
 		else:
 			self.int_minmax = None
 
-		if self.decdigits_minmax is not None and other.decdigits_minmax is not None:
-			self.decdigits_minmax.merge(other.decdigits_minmax)
+		if self.decpre_minmax is not None and other.decpre_minmax is not None:
+			self.decpre_minmax.merge(other.decpre_minmax)
 		else:
-			self.decdigits_minmax = None
+			self.decpre_minmax = None
 
-		if self.decprecision_minmax is not None and other.decprecision_minmax is not None:
-			self.decprecision_minmax.merge(other.decprecision_minmax)
+		if self.decpost_minmax is not None and other.decpost_minmax is not None:
+			self.decpost_minmax.merge(other.decpost_minmax)
 		else:
-			self.decprecision_minmax = None
+			self.decpost_minmax = None
 
 		if self.len_minmax is not None and other.len_minmax is not None:
 			self.len_minmax.merge(other.len_minmax)
