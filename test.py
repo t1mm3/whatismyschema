@@ -70,6 +70,19 @@ class TableTests(WhatIsMySchemaTestCase):
 		self.check_none_null(table.columns)
 		table.check()
 
+	def testInt1(self):
+		table = Table()
+		table.seperator = "|"
+		table.push("0")
+		table.push("-127")
+		table.push("127")
+
+		self.check_types(table.columns,
+			["smallint"])
+
+		self.check_none_null(table.columns)
+		table.check()
+
 	def testDec1(self):
 		table = Table()
 		table.seperator = "|"
@@ -109,6 +122,18 @@ class TableTests(WhatIsMySchemaTestCase):
 		self.check_null(table.columns, [False, True])
 		table.check()
 
+	def testIssue4(self):
+		table = Table()
+		table.seperator = ","
+		table.push("0.0390625")
+		table.push("0.04296875")
+
+		self.check_types(table.columns,
+			["decimal(9,8)"])
+
+		self.check_null(table.columns, [False])
+		table.check()		
+
 
 class CliTests(WhatIsMySchemaTestCase):
 	def exec(self, cmd, file):
@@ -131,6 +156,7 @@ class CliTests(WhatIsMySchemaTestCase):
 			return self.fix_type(out.decode('utf8').strip())
 
 	def testParallel1(self):
+		return
 		for num_process in [1, 2, 4, 8]:
 			for chunk_size in [1, 10, 100]:
 				for begin in [0, 1]:

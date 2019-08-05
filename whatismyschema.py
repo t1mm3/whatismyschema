@@ -84,7 +84,6 @@ class DateTimeFormatTryAndError(FormatTryAndError):
 		except ValueError:
 			return None
 
-	
 class Column(object):
 	int_ranges = [
 			(0, 255, "tinyint"),
@@ -93,7 +92,7 @@ class Column(object):
 			(-9223372036854775808, 9223372036854775807, "bigint")
 		]
 
-	__slots__ = "id", "name", "null_value", "num_nulls", "num_values", "int_minmax", "decdigits_minmax", "decprecision_minmax", "len_minmax", "guess_date", "guess_datetime"
+	__slots__ = "id", "name", "null_value", "num_nulls", "num_values", "int_minmax", "decscale_minmax", "decprecision_minmax", "len_minmax", "guess_date", "guess_datetime"
 
 	def __init__(self, table, name):
 		self.id = len(table.columns)
@@ -107,7 +106,7 @@ class Column(object):
 		self.num_values = 0
 
 		self.int_minmax = MinMax()
-		self.decdigits_minmax = MinMax()
+		self.decscale_minmax = MinMax()
 		self.decprecision_minmax = MinMax()
 		self.len_minmax = MinMax()
 
@@ -135,17 +134,55 @@ class Column(object):
 			except:
 				self.int_minmax = None
 
-		if self.decdigits_minmax is not None:
-			try:
-				dec = Decimal(attr)
-				exp = -dec.as_tuple().exponent
-				if exp > 0:
+		if self.decscale_minmax is not None:
+			valid = True
+
+			decimal_sep = "."
+
+			# find dot
+			parts = attr.split(decimal_sep, 1)
+			num_parts = len(parts)
+
+			if num_parts == 1:
+				scale = 0
+				precision = len(parts[0])
+			else:
+				scale = len(parts[1])
+				precision = len(parts[0]) + scale
+
+			if scale > precision:
+				valid = False
+				# print("'{}': 2 (prec {}, scale {}),".format(attr, precision, scale))
+
+			valid = valid and num_parts == 1 or num_parts == 2
+
+			if valid and num_parts >= 1:
+				try:
+					int(parts[0])
+				except:
+					valid = False
+					# print("'{}': 3".format(attr))
+
+			if valid and num_parts >= 2:
+				try:
+					int(parts[1])
+				except:
+					valid = False
+					# print("'{}': 4".format(attr))
+
+			if valid:
+				if scale > 0:
 					self.int_minmax = None
-				self.decprecision_minmax.push(exp)
-				self.decdigits_minmax.push(len(dec.as_tuple().digits))
-			except:
-				self.decdigits_minmax = None
+
+				self.decprecision_minmax.push(precision)
+
+				self.decscale_minmax.push(scale)
+
+				# print("DECIMAL '{attr}': {a} {b}\n".format(attr=attr, a=precision, b=scale))
+
+			if not valid:
 				self.decprecision_minmax = None
+				self.decscale_minmax = None
 
 		if self.guess_date is not None:
 			self.guess_date.test(attr)
@@ -169,10 +206,15 @@ class Column(object):
 
 				r.append(name)
 
-		if self.decdigits_minmax is not None:
-			r.append("decimal({n}, {p})".format(
-				n=self.decdigits_minmax.dmax,
-				p=self.decprecision_minmax.dmax))
+		if self.decscale_minmax is not None:
+			precision = self.decprecision_minmax.dmax
+			scale = self.decscale_minmax.dmax
+
+			assert(precision >= scale)
+
+			r.append("decimal({precision}, {scale})".format(
+				precision=precision,
+				scale=scale))
 
 		if self.guess_date is not None:
 			r.append("date")
