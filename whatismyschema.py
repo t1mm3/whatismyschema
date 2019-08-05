@@ -615,7 +615,7 @@ class TerminalOutput(object):
 
 				t="{n} {t}{a}".format(
 					n=col.name, t=tpe_str,
-					a=" " if col.num_nulls == 0 else "")
+					a=" NOT NULL" if col.num_nulls == 0 else "")
 
 				print("{t}{post}".format(
 					t=t,
