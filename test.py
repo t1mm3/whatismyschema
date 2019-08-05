@@ -129,10 +129,46 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("0.04296875")
 
 		self.check_types(table.columns,
-			["decimal(9,8)"])
+			["decimal(8,8)"])
 
 		self.check_null(table.columns, [False])
-		table.check()		
+		table.check()
+
+	def testDecZeros(self):
+		table = Table()
+		table.seperator = "|"
+		table.push(".1000|000.0|.4")
+		table.push(".123|1.1|.423")
+
+		self.check_types(table.columns, [
+			"decimal(3, 3)", "decimal(2, 1)", "decimal(3, 3)"])
+
+		self.check_null(table.columns, [False, False, False])
+		table.check()
+
+	def testIssue7a(self):
+		table = Table()
+		table.seperator = "|"
+		table.push("123|.1|1.23")
+		table.push("1|.123|12.3")
+
+		self.check_types(table.columns,
+			["tinyint", "decimal(3,3)", "decimal(4,2)"])
+
+		self.check_null(table.columns, [False, False, False])
+		table.check()
+
+	def testIssue7b(self):
+		table = Table()
+		table.seperator = "|"
+		table.push("123|1|1.23|12.3")
+		table.push("0.123|.1|.123|.123")
+
+		self.check_types(table.columns,
+			["decimal(6,3)", "decimal(2,1)", "decimal(4,3)", "decimal(5,3)"])
+
+		self.check_null(table.columns, [False, False, False, False])
+		table.check()
 
 
 class CliTests(WhatIsMySchemaTestCase):
