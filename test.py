@@ -170,6 +170,33 @@ class TableTests(WhatIsMySchemaTestCase):
 		self.check_null(table.columns, [False, False, False, False])
 		table.check()
 
+	def testIssue5a(self):
+		table = Table()
+		table.seperator = "|"
+		table.push("1||a")
+		table.push("2||b")
+		table.push("3||c")
+
+		self.check_types(table.columns,
+			["tinyint", "tinyint", "varchar(1)"])
+
+		self.check_null(table.columns, [False, True, False])
+		table.check()
+
+	def testIssue5b(self):
+		table = Table()
+		table.seperator = "|"
+		table.parent_null_value = "="
+		table.push("1|=|a")
+		table.push("2|=|b")
+		table.push("3|=|c")
+
+		self.check_types(table.columns,
+			["tinyint", "tinyint", "varchar(1)"])
+
+		self.check_null(table.columns, [False, True, False])
+		table.check()
+
 
 class CliTests(WhatIsMySchemaTestCase):
 	def exec(self, cmd, file):

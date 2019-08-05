@@ -120,10 +120,10 @@ class Column(object):
 			])
 
 	def push_attribute(self, attr, table):
-		self.num_values = self.num_values + 1
+		self.num_values += 1
 
 		if attr == self.null_value:
-			self.num_nulls = self.num_nulls + 1
+			self.num_nulls += 1
 			return
 
 		self.len_minmax.push(len(attr))
@@ -209,7 +209,11 @@ class Column(object):
 
 	def determine_type(self):
 		r = []
-		if self.int_minmax is not None:
+		if self.num_values == self.num_nulls:
+			# undefine, make tight choice
+			r.append("tinyint")
+
+		if self.int_minmax is not None and self.int_minmax.dmax is not None:
 			for (dmin, dmax, name) in self.int_ranges:
 				if self.int_minmax.dmax > dmax:
 					continue
@@ -218,7 +222,7 @@ class Column(object):
 
 				r.append(name)
 
-		if self.decpre_minmax is not None:
+		if self.decpre_minmax is not None and self.decpre_minmax.dmax is not None:
 			precision = self.decpost_minmax.dmax + self.decpre_minmax.dmax
 			scale = self.decpost_minmax.dmax
 
