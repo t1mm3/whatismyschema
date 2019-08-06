@@ -2,10 +2,12 @@ language: python
 
 matrix:
   include:
-    - name: "Python 3.7.1 on Xenial Linux"
+    - name: "Python 3.7 on Xenial Linux"
       python: 3.7           # this works for Linux but is ignored on macOS or Windows
       dist: xenial          # required for Python >= 3.7
-
+    - name: "Python 2.7 on Xenial Linux"
+      python: 2.7
+      dist: xenial
     - name: "PyPy 3.5 on Xenial Linux"
       python: "pypy3.5"
       dist: xenial
