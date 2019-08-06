@@ -1,4 +1,5 @@
 #!/bin/env python
+# coding: utf8
 #
 # WhatIsMySchema
 #
