@@ -703,6 +703,9 @@ def main():
 
 	args = parser.parse_args()
 
+	# multithreading issue with datetime.strptime() and Python 2
+	strptime = datetime.strptime
+
 	table = Table()
 
 	schema_main(table, args)
