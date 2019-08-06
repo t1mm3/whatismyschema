@@ -200,7 +200,7 @@ class TableTests(WhatIsMySchemaTestCase):
 
 
 class CliTests(WhatIsMySchemaTestCase):
-	def exec(self, cmd, file):
+	def run_process(self, cmd, file):
 		path = os.path.dirname(os.path.abspath(__file__))
 		p = subprocess.Popen("python {path}/whatismyschema.py{sep}{cmd}{sep}{path}/{file}".format(
 			path=path, cmd=cmd, file=file,
@@ -225,7 +225,7 @@ class CliTests(WhatIsMySchemaTestCase):
 				for begin in [0, 1]:
 					flags = "--parallel-chunk-size {chunk_size} --parallelism {parallel} --begin {begin}".format(
 						chunk_size=chunk_size, parallel=num_process, begin=begin)
-					out = self.exec(flags, "test1.txt")
+					out = self.run_process(flags, "test1.txt")
 					if begin == 0:
 						expect = self.fix_type("col0varchar(5)notnullcol1varchar(2)notnullcol2varchar(4)notnull")
 						self.assertEqual(out, expect)
