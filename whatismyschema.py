@@ -9,6 +9,7 @@
 
 from decimal import *
 from datetime import datetime
+import time # strpdate fallback for older Python versions
 import itertools
 try:
     from itertools import zip_longest as zip_longest
@@ -80,10 +81,20 @@ class DateTimeFormatTryAndError(FormatTryAndError):
 		self.valid = True
 
 	def match_format(self, attr, fmt):
+		try_fall_back = False
+
 		try:
 			return datetime.strptime(attr, fmt)
 		except ValueError:
 			return None
+		except AttributeError:
+			try_fall_back = True
+
+		if try_fall_back:
+			try:
+				return time.strptime(attr, fmt)
+			except ValueError:
+				return None
 
 class Column(object):
 	int_ranges = [
