@@ -19,4 +19,4 @@ matrix:
 install:
   - echo 
 script:
-  - python3 test.py || python test.py
+  - python3 run_test.py || python run_test.py
