@@ -6,4 +6,5 @@ python:
   - "pypy3.5"
 install:
   - echo 
-script: test
+script:
+  - python test.py
