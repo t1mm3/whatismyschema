@@ -79,7 +79,7 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("127")
 
 		self.check_types(table.columns,
-			["smallint"])
+			["tinyint"])
 
 		self.check_none_null(table.columns)
 		table.check()
@@ -179,7 +179,7 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("3||c")
 
 		self.check_types(table.columns,
-			["tinyint", "tinyint", "varchar(1)"])
+			["tinyint", "boolean", "varchar(1)"])
 
 		self.check_null(table.columns, [False, True, False])
 		table.check()
@@ -193,7 +193,7 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("3|=|c")
 
 		self.check_types(table.columns,
-			["tinyint", "tinyint", "varchar(1)"])
+			["tinyint", "boolean", "varchar(1)"])
 
 		self.check_null(table.columns, [False, True, False])
 		table.check()
