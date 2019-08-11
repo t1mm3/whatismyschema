@@ -622,7 +622,7 @@ class TerminalOutput(object):
 		num_cols = len(print_cols)
 
 		if self.create_table:
-			print("CREATE TABLE {} (".format(self.create_table))
+			print("CREATE TABLE \"{}\" (".format(self.create_table))
 
 			col_counter = 0
 
