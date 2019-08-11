@@ -191,7 +191,8 @@ class Column(object):
 				# decimal places must be integer
 				if len_post != 0:
 					try:
-						int(post)
+						# sanitycheck: no sign ('-') after '.'
+						valid = (int(post) >= 0)
 					except:
 						valid = False
 
