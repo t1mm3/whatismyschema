@@ -98,7 +98,7 @@ class DateTimeFormatTryAndError(FormatTryAndError):
 
 class Column(object):
 	int_ranges = [
-			(0, 255, "tinyint"),
+			(-128, 127, "tinyint"),
 			(-32768, 32767, "smallint"),
 			(-2147483648, 2147483647, "int"),
 			(-9223372036854775808, 9223372036854775807, "bigint")
