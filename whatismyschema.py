@@ -183,7 +183,8 @@ class Column(object):
 				# empty 'pre' means implicit 0
 				if len_pre != 0:
 					try:
-						int(pre)
+						# sign '-' doesn't count as digit
+						len_pre -= (int(pre) < 0)
 					except:
 						valid = False
 
