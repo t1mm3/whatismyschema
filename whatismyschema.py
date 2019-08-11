@@ -225,7 +225,7 @@ class Column(object):
 		r = []
 		if self.num_values == self.num_nulls:
 			# undefine, make tight choice
-			r.append("tinyint")
+			r.append("boolean")
 
 		if self.int_minmax is not None and self.int_minmax.dmax is not None:
 			for (dmin, dmax, name) in self.int_ranges:
