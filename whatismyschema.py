@@ -638,7 +638,7 @@ class TerminalOutput(object):
 				print("{t}{post}".format(
 					t=t,
 					post="" if last_col else ","))
-			print(")")
+			print(");")
 
 			return
 
