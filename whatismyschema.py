@@ -152,6 +152,10 @@ class Column(object):
 			decimal_sep = "."
 			data = attr
 
+			# remove leading sign
+			if data[0] in ('-', '+'):
+				data = data[1:]
+
 			# remove leading zeros
 			data = data.lstrip("0")
 
@@ -183,8 +187,7 @@ class Column(object):
 				# empty 'pre' means implicit 0
 				if len_pre != 0:
 					try:
-						# sign '-' doesn't count as digit
-						len_pre -= (int(pre) < 0)
+						int(pre)
 					except:
 						valid = False
 
