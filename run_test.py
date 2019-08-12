@@ -79,7 +79,7 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("127")
 
 		self.check_types(table.columns,
-			["smallint"])
+			["tinyint"])
 
 		self.check_none_null(table.columns)
 		table.check()
@@ -179,7 +179,7 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("3||c")
 
 		self.check_types(table.columns,
-			["tinyint", "tinyint", "varchar(1)"])
+			["tinyint", "boolean", "varchar(1)"])
 
 		self.check_null(table.columns, [False, True, False])
 		table.check()
@@ -193,7 +193,7 @@ class TableTests(WhatIsMySchemaTestCase):
 		table.push("3|=|c")
 
 		self.check_types(table.columns,
-			["tinyint", "tinyint", "varchar(1)"])
+			["tinyint", "boolean", "varchar(1)"])
 
 		self.check_null(table.columns, [False, True, False])
 		table.check()
@@ -227,7 +227,7 @@ class CliTests(WhatIsMySchemaTestCase):
 						chunk_size=chunk_size, parallel=num_process, begin=begin)
 					out = self.run_process(flags, "test1.txt")
 					if begin == 0:
-						expect = self.fix_type("col0varchar(5)notnullcol1varchar(2)notnullcol2varchar(4)notnull")
+						expect = self.fix_type("col0varchar(5)notnullcol1varchar(2)notnullcol2varchar(3)notnull")
 						self.assertEqual(out, expect)
 					elif begin == 1:
 						expect = self.fix_type("col0decimal(4,2)notnullcol1tinyintnotnullcol2smallintnotnull")

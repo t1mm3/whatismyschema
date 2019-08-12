@@ -98,7 +98,7 @@ class DateTimeFormatTryAndError(FormatTryAndError):
 
 class Column(object):
 	int_ranges = [
-			(0, 255, "tinyint"),
+			(-128, 127, "tinyint"),
 			(-32768, 32767, "smallint"),
 			(-2147483648, 2147483647, "int"),
 			(-9223372036854775808, 9223372036854775807, "bigint")
@@ -152,11 +152,9 @@ class Column(object):
 			decimal_sep = "."
 			data = attr
 
-			# remove leading zeros
-			data = data.lstrip("0")
-
-			# remove trailing zeros
-			data = data.rstrip("0")
+			# remove leading sign
+			if data[0] in ('-', '+'):
+				data = data[1:]
 
 			# find dot
 			parts = data.split(decimal_sep, 1)
@@ -171,10 +169,18 @@ class Column(object):
 			elif num_parts == 2:
 				pre = parts[0]
 				post = parts[1]
+				if len(post) > 0:
+					valid = (post[0] in ('0','1','2','3','4','5','6','7','8','9'))
 			else:
 				valid = False
 
 			if valid:
+				# remove leading zeros
+				pre = pre.lstrip("0")
+
+				# remove trailing zeros
+				post = post.rstrip("0")
+
 				# compute scale & precision
 				len_post = len(post)
 				len_pre = len(pre)
@@ -223,7 +229,7 @@ class Column(object):
 		r = []
 		if self.num_values == self.num_nulls:
 			# undefine, make tight choice
-			r.append("tinyint")
+			r.append("boolean")
 
 		if self.int_minmax is not None and self.int_minmax.dmax is not None:
 			for (dmin, dmax, name) in self.int_ranges:
@@ -298,7 +304,7 @@ class Table:
 		self.parent_null_value = ""
 
 	def push_line(self, line):
-		attrs = line.split(self.seperator)
+		attrs = line.rstrip('\n').rstrip('\r').split(self.seperator)
 
 		num_attrs = len(attrs)
 		num_cols = len(self.columns)
@@ -312,6 +318,7 @@ class Table:
 					# Add NULLs because these columns are new
 					# Hence before that they are considered missing values
 					c.num_nulls = self.line_number
+					c.num_values = self.line_number
 
 					self.columns.append(c)
 			else:
@@ -319,7 +326,7 @@ class Table:
 				for r in range(0, diff):
 					# Append safe NULL values
 					c = self.columns[r+num_attrs]
-					attr.append(c.null_value)
+					attrs.append(c.null_value)
 
 		for (attr, col) in zip(attrs, self.columns):
 			col.push_attribute(attr, self)
@@ -620,7 +627,7 @@ class TerminalOutput(object):
 		num_cols = len(print_cols)
 
 		if self.create_table:
-			print("CREATE TABLE {} (".format(self.create_table))
+			print("CREATE TABLE \"{}\" (".format(self.create_table))
 
 			col_counter = 0
 
@@ -636,7 +643,7 @@ class TerminalOutput(object):
 				print("{t}{post}".format(
 					t=t,
 					post="" if last_col else ","))
-			print(")")
+			print(");")
 
 			return
 
