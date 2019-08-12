@@ -304,7 +304,7 @@ class Table:
 		self.parent_null_value = ""
 
 	def push_line(self, line):
-		attrs = line.split(self.seperator)
+		attrs = line.rstrip('\n').rstrip('\r').split(self.seperator)
 
 		num_attrs = len(attrs)
 		num_cols = len(self.columns)
