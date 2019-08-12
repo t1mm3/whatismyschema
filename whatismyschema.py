@@ -326,7 +326,7 @@ class Table:
 				for r in range(0, diff):
 					# Append safe NULL values
 					c = self.columns[r+num_attrs]
-					attr.append(c.null_value)
+					attrs.append(c.null_value)
 
 		for (attr, col) in zip(attrs, self.columns):
 			col.push_attribute(attr, self)
