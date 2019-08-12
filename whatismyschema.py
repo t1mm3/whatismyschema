@@ -175,6 +175,8 @@ class Column(object):
 			elif num_parts == 2:
 				pre = parts[0]
 				post = parts[1]
+				if len(post) > 0:
+					valid = (post[0] in ('0','1','2','3','4','5','6','7','8','9'))
 			else:
 				valid = False
 
@@ -194,8 +196,7 @@ class Column(object):
 				# decimal places must be integer
 				if len_post != 0:
 					try:
-						# sanitycheck: no sign ('-') after '.'
-						valid = (int(post) >= 0)
+						int(post)
 					except:
 						valid = False
 
