@@ -318,6 +318,7 @@ class Table:
 					# Add NULLs because these columns are new
 					# Hence before that they are considered missing values
 					c.num_nulls = self.line_number
+					c.num_values = self.line_number
 
 					self.columns.append(c)
 			else:
