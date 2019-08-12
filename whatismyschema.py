@@ -156,12 +156,6 @@ class Column(object):
 			if data[0] in ('-', '+'):
 				data = data[1:]
 
-			# remove leading zeros
-			data = data.lstrip("0")
-
-			# remove trailing zeros
-			data = data.rstrip("0")
-
 			# find dot
 			parts = data.split(decimal_sep, 1)
 			num_parts = len(parts)
@@ -181,6 +175,12 @@ class Column(object):
 				valid = False
 
 			if valid:
+				# remove leading zeros
+				pre = pre.lstrip("0")
+
+				# remove trailing zeros
+				post = post.rstrip("0")
+
 				# compute scale & precision
 				len_post = len(post)
 				len_pre = len(pre)
